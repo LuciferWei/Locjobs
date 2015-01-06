@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Selenium.BrowserMatrix;
 using OpenQA.Selenium;
 using System.Threading;
 using Selenium.Extensions;
+using System.Collections.ObjectModel;
+using System.IO;
 
 namespace ConsoleApplication
 {
@@ -35,7 +34,26 @@ namespace ConsoleApplication
 
             driver.FindElement(By.CssSelector("input[name='otp']")).SendKeys(args[1]);
             driver.WaitForURLChange(() => driver.FindElement(By.CssSelector("div button")).Click());
-            Console.ReadKey();
+            IWebElement LocaljobID = driver.FindElement(By.CssSelector("a[title*='loc job 341']"));
+            driver.WaitForURLChange(() => LocaljobID.Click());
+
+            List<string> localPages = new List<string>();
+            ReadOnlyCollection<IWebElement> parsedAllPages;
+            parsedAllPages = driver.FindElements(By.CssSelector("span[class='js-selectable-text']"));
+
+            for (int i = 0; i < parsedAllPages.Count; i++)
+            {
+                localPages.Add(parsedAllPages[i].GetAttribute("title"));
+                // System.Console.WriteLine(localPages[i]);
+            }
+
+            FileStream aFile = new FileStream("Local drop pages.txt", FileMode.OpenOrCreate);
+            StreamWriter sw = new StreamWriter(aFile);
+            for (int i = 0; i < localPages.Count; i++)
+            {
+                sw.WriteLine(localPages[i]);
+            }
+            sw.Close();
             driver.Close();
         }
     }
