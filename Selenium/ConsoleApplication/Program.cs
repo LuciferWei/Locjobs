@@ -13,46 +13,31 @@ namespace ConsoleApplication
     {
         /*
          * param:
-         * agrs[0]: Destination URL
+         * agrs[0]: Destination URL New version can be anything but null
          * args[1]: Verify code
          * args[2]: username
          * args[3]: password
          **/
         static void Main(string[] args)
         {
+            List<string> allURLs = FileOperation.readFile();
             IWebDriver driver = Chrome.ChromeDriver();
             driver.Manage().Window.Maximize();
-            driver.Navigate().GoToUrl(args[0]);
+            driver.Navigate().GoToUrl(allURLs[0].Split('+')[0]);
 
-            Thread.Sleep(500);
-            driver.FindElement(By.CssSelector("input[name='login']")).SendKeys(args[2]);
-            driver.FindElement(By.CssSelector("input[name='password']")).SendKeys(args[3]);
+            CommonMethod.logIn(args, driver);
+            StreamWriter sw = null;
 
-            Thread.Sleep(500);
-            driver.WaitForURLChange(() => driver.FindElement(By.CssSelector("input[name='commit']")).Click());
-
-
-            driver.FindElement(By.CssSelector("input[name='otp']")).SendKeys(args[1]);
-            driver.WaitForURLChange(() => driver.FindElement(By.CssSelector("div button")).Click());
-            IWebElement LocaljobID = driver.FindElement(By.CssSelector("a[title*='loc job 341']"));
-            driver.WaitForURLChange(() => LocaljobID.Click());
-
-            List<string> localPages = new List<string>();
-            ReadOnlyCollection<IWebElement> parsedAllPages;
-            parsedAllPages = driver.FindElements(By.CssSelector("span[class='js-selectable-text']"));
-
-            for (int i = 0; i < parsedAllPages.Count; i++)
+            foreach (string url in allURLs)
             {
-                localPages.Add(parsedAllPages[i].GetAttribute("title"));
-                // System.Console.WriteLine(localPages[i]);
+                driver.Navigate().GoToUrl(url.Split('+')[0]);
+                IWebElement LocaljobID = driver.FindElement(By.CssSelector("a[title*='loc job "+url.Split('+')[1]+"']"));
+                driver.WaitForURLChange(() => LocaljobID.Click());
+                List<string> localPages = CommonMethod.getLocalPages(driver);
+
+                sw = FileOperation.WriteToFile(localPages);
             }
 
-            FileStream aFile = new FileStream("Local drop pages.txt", FileMode.OpenOrCreate);
-            StreamWriter sw = new StreamWriter(aFile);
-            for (int i = 0; i < localPages.Count; i++)
-            {
-                sw.WriteLine(localPages[i]);
-            }
             sw.Close();
             driver.Close();
         }
